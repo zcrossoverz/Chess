@@ -21,7 +21,6 @@
 .container {
     width: 600px;
     height: 600px;
-
 }
 
 .square {
@@ -63,4 +62,13 @@
 
 .cursor-pointer {
     cursor: pointer;
+}
+
+.status {
+    background: #d3f8d0;
+    height: 400px;
+    width: 300px;
+    margin-left: 20px;
+    padding: 8px;
+    border-radius: 8px;
 }
