@@ -7,12 +7,14 @@ function App() {
   const [board, setBoard] = useState([]);
   const [isGameOver, setisGameOver] = useState();
   const [result, setResult] = useState();
+  const [isMyTurn, setIsMyTurn] = useState();
   useEffect(() => {
     initGame();
-    const subscribe = gameSubject.subscribe(({board, isGameOver, result}) => {
+    const subscribe = gameSubject.subscribe(({board, isGameOver, result, turn}) => {
       setBoard(board);
       setisGameOver(isGameOver);
       setResult(result);
+      setIsMyTurn(turn === 'w' ? 1:0);
     });
     return () => subscribe.unsubscribe();
   }, []);
@@ -22,6 +24,7 @@ function App() {
         <Board board={board} />
       </div>
       <div className="status">
+        Lượt của {isMyTurn ? 'bạn':'máy'}
         {
         isGameOver && (
           <div>
