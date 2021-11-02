@@ -44,6 +44,9 @@ export function move(from, to, promotion) {
 
 
 function updateGame(pendingPromotion){
+    //if(chess.turn() === 'b') {
+        cal(chess.turn() === 'b');
+    //}
     const isGameOver = chess.game_over();
     if(chess.in_check()) console.log('in check');
     if(chess.in_checkmate()) console.log('in checkmate');
@@ -85,66 +88,87 @@ function calculateMove(){
         value: -999
     };
     moves.forEach(element => {
-        let turnValue;
-        if(element.flags === 'q'){
-            console.log('nhap thanh canh hau');
-            turnValue = 80;
-        }else if(element.flags === 'k') {
-            console.log('nhap thanh vua');
-            turnValue = 75;
-        }else if(element.flags === 'p'){
-            console.log('tien chot');
-            turnValue = 70;
-        }else if(element.flags === 'c') {
-            console.log(element);
-            turnValue = valuePiece(element.captured);
-            console.log(valuePiece(element.captured));
-        }else if(element.flags === 'e'){
-            console.log('bat tot qua duong');
-            turnValue = 60;
-        }else{
-           // console.log('bth');
-            turnValue = 5;
-        }
-
-        if(bestMove.value < turnValue){
-            bestMove.value = turnValue;
+        chess.move(element.san);
+        let evalute = scoreBoard(true);
+        chess.undo();
+        if(evalute > bestMove.value){
+            bestMove.value = evalute;
             bestMove.move = element;
         }
     });
     return bestMove;
 }
 
-function valuePiece(captured){
-    switch (captured){
-        case 'p': return 10; // tot
-        case 'n': return 30; // ngua
-        case 'b': return 30; // tuong
-        case 'r': return 50; // xe
-        case 'q': return 90; // hau
-        default: return 900; // vua
-    }
+
+let valuePiece = {
+    p: 10, // tot
+    n: 30, // ngua
+    b: 30, // tuong
+    r: 50, // xe
+    q: 90, // hau
+    k: 900 // vua
+};
+
+function scoreBoard(isMax){
+    let score = 0;
+    let color = isMax ? 'b' : 'w';
+    chess.board().forEach((e) => {
+        e.forEach((k) => {
+            if(k && k.color == color) {
+                score += valuePiece[k.type];
+            }
+        });
+    });
+    return score;
 }
 
-function calculateBoard(){
-    console.log(chess.board());
+function evaluate(isMax){
+    return !isMax ? scoreBoard(false) - scoreBoard(true) : scoreBoard(true) - scoreBoard(false);
 }
 
 
-function minimax(depth, isMaxPlayer){
-    let bestMove;
-    if(depth === 0) return;
-    else{
-        if(isMaxPlayer){
-            
-        }else{
-
+function cal(black){
+    let moves = chess.moves({ verbose: true });
+    let bestMove = {
+        value: -999,
+        move
+    };
+    moves.forEach((e) => {
+        chess.move(e.san);
+        let evaluate = minimax(2, black);
+        if(evaluate > bestMove.value){
+            bestMove.value = evaluate;
+            bestMove.move = e;
         }
+        chess.undo();
+        
+    });
+    // console.log(bestMove);
+    handleMove(bestMove.move.from, bestMove.move.to);
+}
+
+function minimax(depth, isMax){
+    if(depth == 0) return evaluate(isMax);
+    if(isMax){
+        let value = -9999;
+        chess.moves({ verbose: true }).forEach((e) => {
+            chess.move(e.san);
+            value = Math.max(value, minimax(depth-1, !isMax));
+            chess.undo();
+        });
+        return value;
+    }else{
+        let value = 9999;
+        chess.moves({ verbose: true }).forEach((e) => {
+            chess.move(e.san);
+            value = Math.min(value, minimax(depth-1, !isMax));
+            chess.undo();
+        });
+        return value;
     }
 }
 
-calculateBoard();
 
-// setInterval(() => {
-//     if(!chess.game_over()) calculateMove();
-// }, 1000);
+// setInterval(()=> {
+//     cal()
+// },5000);
