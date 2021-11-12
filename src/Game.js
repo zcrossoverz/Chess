@@ -6,6 +6,9 @@ import {BehaviorSubject} from "rxjs";
  let checkMate = 'rnb1kbnr/pppp1ppp/8/4p3/5PPq/8/PPPPP2P/RNBQKBNR w KQkq - 1 2';
  let insuficcientMaterial = 'k7/8/n7/8/8/8/8/7K b - - 0 1';
 
+ let c1 = '8/4k3/8/8/3n4/8/8/2KQ4 w - - 0 51';
+ let c2= '1Q6/4k3/8/1n6/8/8/8/1K6 b - - 10 60';
+
 const chess = new Chess();
 
 export const gameSubject = new BehaviorSubject({
@@ -44,12 +47,8 @@ export function move(from, to, promotion) {
 
 
 function updateGame(pendingPromotion){
-    //if(chess.turn() === 'b') {
-        cal(chess.turn() === 'b');
-    //}
+    
     const isGameOver = chess.game_over();
-    if(chess.in_check()) console.log('in check');
-    if(chess.in_checkmate()) console.log('in checkmate');
     const newGame = {
         turn: chess.turn(),
         board: chess.board(),
@@ -58,12 +57,15 @@ function updateGame(pendingPromotion){
         result: isGameOver ? getGameResult() : null
     };
     gameSubject.next(newGame);
+    if(chess.turn() === 'b') {
+        setTimeout(call_minimax, 0);
+    }
 }
 
 function getGameResult() {
         if(chess.in_checkmate()) {
             const winner = chess.turn() === "w" ? "BLACK" : "WHITE";
-            return `CHECKMATE - WINNER - ${winner}`;
+            return `CHECKMATE - ${winner} THẮNG`;
         } else if (chess.in_draw()) {
             // console.log('hoa');
             let reason = '50 - MOVES - RULE';
@@ -74,29 +76,10 @@ function getGameResult() {
             }else if(chess.insufficient_material()){
                 reason = 'INSUFFICIENT MATERIAL';
             }
-            return `DRAW - ${reason}`;
+            return `HÒA - ${reason}`;
         }else{
             return 'UNKNOWN REASON';
         }
-}
-
-
-function calculateMove(){
-    let moves = chess.moves({ verbose: true }); // danh sach cac nuoc di hop le
-    let bestMove = {
-        move,
-        value: -999
-    };
-    moves.forEach(element => {
-        chess.move(element.san);
-        let evalute = scoreBoard(true);
-        chess.undo();
-        if(evalute > bestMove.value){
-            bestMove.value = evalute;
-            bestMove.move = element;
-        }
-    });
-    return bestMove;
 }
 
 
@@ -114,61 +97,76 @@ function scoreBoard(isMax){
     let color = isMax ? 'b' : 'w';
     chess.board().forEach((e) => {
         e.forEach((k) => {
-            if(k && k.color == color) {
+            if(k && k.color === color) {
                 score += valuePiece[k.type];
             }
         });
     });
+    // return isMax?score:-score;
     return score;
 }
 
 function evaluate(isMax){
-    return !isMax ? scoreBoard(false) - scoreBoard(true) : scoreBoard(true) - scoreBoard(false);
+    // return !isMax ? scoreBoard(false) - scoreBoard(true) : scoreBoard(true) - scoreBoard(false);
+    scoreBoard(isMax);
 }
 
+let num = 0;
 
-function cal(black){
-    let moves = chess.moves({ verbose: true });
+async function call_minimax(){
+    let moves = chess.moves({ verbose: true }).sort((a, b) => 0.5 - Math.random());
     let bestMove = {
-        value: -999,
+        value: -9999,
         move
     };
     moves.forEach((e) => {
-        chess.move(e.san);
-        let evaluate = minimax(2, black);
+        num++;
+       chess.move(e.san);
+        let evaluate = minimax(2, false, -10000, 10000);
         if(evaluate > bestMove.value){
             bestMove.value = evaluate;
             bestMove.move = e;
         }
         chess.undo();
+      //  console.log('nuoc di: '+evaluate+' :'+e.san);
         
     });
     // console.log(bestMove);
     handleMove(bestMove.move.from, bestMove.move.to);
+    console.log('số nước đi đã tính được: '+num);
+    num = 0;
 }
 
-function minimax(depth, isMax){
-    if(depth == 0) return evaluate(isMax);
+function minimax(depth, isMax, alpha, beta){
+    if(depth === 0) return -scoreBoard(isMax);
     if(isMax){
         let value = -9999;
         chess.moves({ verbose: true }).forEach((e) => {
+            num++;
             chess.move(e.san);
-            value = Math.max(value, minimax(depth-1, !isMax));
+            if(chess.in_check()) value += 20;
+            value = Math.max(value, minimax(depth-1, false, -10000, 10000));
             chess.undo();
+            alpha = Math.max(alpha, value);
+	        if(beta <= alpha)
+	      	   return value;
         });
+
         return value;
     }else{
         let value = 9999;
         chess.moves({ verbose: true }).forEach((e) => {
+            num++;
             chess.move(e.san);
-            value = Math.min(value, minimax(depth-1, !isMax));
+            if(chess.in_check()) value -= 20;
+            value = Math.min(value, minimax(depth-1, true, -10000, 10000));
             chess.undo();
+            beta = Math.min(beta, value);
+	        if(beta <= alpha)
+	      	   return value;
         });
+
         return value;
     }
 }
 
-
-// setInterval(()=> {
-//     cal()
-// },5000);

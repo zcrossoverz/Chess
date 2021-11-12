@@ -24,12 +24,22 @@ function App() {
         <Board board={board} />
       </div>
       <div className="status">
-        Lượt của {isMyTurn ? 'bạn':'máy'}
+        { (!isGameOver) && (
+          <center><h2>Lượt của {isMyTurn ? 'bạn':'máy'}</h2></center>
+        )
+        }
+        { (!isMyTurn && !isGameOver) && (
+          <div>
+          <br/>
+          <h4>Đang suy nghĩ...</h4>
+          </div>
+        )
+        }
         {
         isGameOver && (
           <div>
-          <h2>GAME OVER</h2>
-          <p>{result}</p>
+          <center><h2>GAME OVER</h2></center>
+          <center><p>{result}</p></center>
           </div>
         )
       }
