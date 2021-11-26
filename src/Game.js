@@ -13,7 +13,7 @@ import {BehaviorSubject} from "rxjs";
 //  let point3 = '2k5/2N5/4b3/5R2/8/8/8/3K4 b - - 3 46';
 
 const chess = new Chess();
-
+console.log("nhannguyen");
 export const gameSubject = new BehaviorSubject({
     board: chess.board(),
 });
