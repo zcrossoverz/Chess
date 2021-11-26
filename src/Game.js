@@ -1,13 +1,16 @@
 import * as Chess from "chess.js";
 import {BehaviorSubject} from "rxjs";
 
- let promotion = 'rnb2bnr/pppPkppp/8/4p3/7q/8/PPPP1PPP/RNBQKBNR w KQ - 1 5';
- let stateMate = '4k3/4P3/4K3/8/8/8/8/8 b - - 0 78';
- let checkMate = 'rnb1kbnr/pppp1ppp/8/4p3/5PPq/8/PPPPP2P/RNBQKBNR w KQkq - 1 2';
- let insuficcientMaterial = 'k7/8/n7/8/8/8/8/7K b - - 0 1';
+//  let promotion = 'rnb2bnr/pppPkppp/8/4p3/7q/8/PPPP1PPP/RNBQKBNR w KQ - 1 5';
+//  let stateMate = '4k3/4P3/4K3/8/8/8/8/8 b - - 0 78';
+//  let checkMate = 'rnb1kbnr/pppp1ppp/8/4p3/5PPq/8/PPPPP2P/RNBQKBNR w KQkq - 1 2';
+//  let insuficcientMaterial = 'k7/8/n7/8/8/8/8/7K b - - 0 1';
 
- let c1 = '8/4k3/8/8/3n4/8/8/2KQ4 w - - 0 51';
- let c2= '1Q6/4k3/8/1n6/8/8/8/1K6 b - - 10 60';
+//  let c1 = '8/4k3/8/8/3n4/8/8/2KQ4 w - - 0 51';
+//  let c2= '1Q6/4k3/8/1n6/8/8/8/1K6 b - - 10 60';
+//  let point = '4k3/3r4/4b3/3N1R2/8/7B/8/4K3 b - - 11 37';
+// //  let point2 = '4k3/8/4r3/3N1R2/4BK2/8/8/8 b - - 10 48';
+//  let point3 = '2k5/2N5/4b3/5R2/8/8/8/3K4 b - - 3 46';
 
 const chess = new Chess();
 
@@ -57,6 +60,7 @@ function updateGame(pendingPromotion){
         result: isGameOver ? getGameResult() : null
     };
     gameSubject.next(newGame);
+    // console.log(chess.fen());
     if(chess.turn() === 'b') {
         setTimeout(call_minimax, 0);
     }
@@ -94,11 +98,13 @@ let valuePiece = {
 
 function scoreBoard(isMax){
     let score = 0;
-    let color = isMax ? 'b' : 'w';
+    // let color = isMax ? 'b' : 'w';
+    // let color = 'w';
     chess.board().forEach((e) => {
         e.forEach((k) => {
-            if(k && k.color === color) {
-                score += valuePiece[k.type];
+            if(k) {
+                if(k.color === 'b') score += valuePiece[k.type];
+                if(k.color === 'w') score -= valuePiece[k.type];
             }
         });
     });
@@ -106,10 +112,10 @@ function scoreBoard(isMax){
     return score;
 }
 
-function evaluate(isMax){
-    // return !isMax ? scoreBoard(false) - scoreBoard(true) : scoreBoard(true) - scoreBoard(false);
-    scoreBoard(isMax);
-}
+// function evaluate(isMax){
+//     // return !isMax ? scoreBoard(false) - scoreBoard(true) : scoreBoard(true) - scoreBoard(false);
+//     scoreBoard(isMax);
+// }
 
 let num = 0;
 
@@ -123,6 +129,7 @@ async function call_minimax(){
         num++;
        chess.move(e.san);
         let evaluate = minimax(2, false, -10000, 10000);
+        //  console.table(evaluate,e);
         if(evaluate > bestMove.value){
             bestMove.value = evaluate;
             bestMove.move = e;
@@ -131,21 +138,24 @@ async function call_minimax(){
       //  console.log('nuoc di: '+evaluate+' :'+e.san);
         
     });
-    // console.log(bestMove);
+    console.log(bestMove);
     handleMove(bestMove.move.from, bestMove.move.to);
     console.log('số nước đi đã tính được: '+num);
     num = 0;
 }
 
 function minimax(depth, isMax, alpha, beta){
-    if(depth === 0) return -scoreBoard(isMax);
+    if(depth === 0) {
+        // console.log('depth '+depth+' '+-scoreBoard(isMax));
+        return scoreBoard(isMax);
+    }
     if(isMax){
         let value = -9999;
         chess.moves({ verbose: true }).forEach((e) => {
             num++;
             chess.move(e.san);
-            if(chess.in_check()) value += 20;
-            value = Math.max(value, minimax(depth-1, false, -10000, 10000));
+            // if(chess.in_check()) value += 20;
+            value = Math.max(value, minimax(depth-1, false, alpha, beta));
             chess.undo();
             alpha = Math.max(alpha, value);
 	        if(beta <= alpha)
@@ -159,7 +169,7 @@ function minimax(depth, isMax, alpha, beta){
             num++;
             chess.move(e.san);
             if(chess.in_check()) value -= 20;
-            value = Math.min(value, minimax(depth-1, true, -10000, 10000));
+            value = Math.min(value, minimax(depth-1, true, alpha, beta));
             chess.undo();
             beta = Math.min(beta, value);
 	        if(beta <= alpha)
